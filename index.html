@@ -8,10 +8,7 @@
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    
-    <!-- FIXED NATIVE VECTOR APPS ICON ENGINE (Bypasses the missing image file) -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%27http://w3.org viewBox=%270 0 512 512%27><rect width=%27512%27 height=%27512%27 rx=%27120%27 fill=%27%23050206%27/><circle cx=%27256%27 cy=%27256%27 r=%27140%27 fill=%27none%27 stroke=%27%23ff6f00%27 stroke-width=%2712%27 filter=%27drop-shadow(0 0 15px rgba(255,111,0,0.6))%27/><path d=%27M190 256c30-40 80-40 110 0s80 40 110 0%27 stroke=%27%23ffb300%27 stroke-width=%278%27 fill=%27none%27 stroke-linecap=%27round%27/></svg>">
-    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%27http://w3.org viewBox=%270 0 512 512%27><rect width=%27512%27 height=%27512%27 rx=%27120%27 fill=%27%23050206%27/><circle cx=%27256%27 cy=%27256%27 r=%27140%27 fill=%27none%27 stroke=%27%23ff6f00%27 stroke-width=%2712%27 filter=%27drop-shadow(0 0 15px rgba(255,111,0,0.6))%27/><path d=%27M190 256c30-40 80-40 110 0s80 40 110 0%27 stroke=%27%23ffb300%27 stroke-width=%278%27 fill=%27none%27 stroke-linecap=%27round%27/></svg>">
+    <link id="apple-icon" rel="apple-touch-icon">
 
     <title>Liquid Dark Dashboard</title>
     <link rel="stylesheet" href="style.css">
@@ -79,7 +76,7 @@
                 </div>
                 <div class="micro-goals-checklist-panel">
                     <div class="checklist-input-row">
-                        <input type="text" id="goalTextInput" placeholder="Add a daily micro-goal..." onkeydown="handleGoalInputKey(event)">
+                        <input text="text" id="goalTextInput" placeholder="Add a daily micro-goal..." onkeydown="handleGoalInputKey(event)">
                         <button onclick="addMicroGoalItem()">+</button>
                     </div>
                     <div class="checklist-items-scroll" id="checklistItemsContainer"></div>
