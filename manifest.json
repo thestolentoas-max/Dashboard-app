@@ -1,0 +1,17 @@
+{
+  "name": "Liquid Dark Dashboard",
+  "short_name": "Dashboard",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#050206",
+  "theme_color": "#050206",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
