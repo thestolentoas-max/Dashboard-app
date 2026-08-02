@@ -3,52 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- MOBILE WEB APP ARCHITECTURE LINK CONFIGURATIONS -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <!-- FIXED NATIVE VECTOR APPS ICON ENGINE (Bypasses the missing image file) -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%27http://w3.org viewBox=%270 0 512 512%27><rect width=%27512%27 height=%27512%27 rx=%27120%27 fill=%27%23050206%27/><circle cx=%27256%27 cy=%27256%27 r=%27140%27 fill=%27none%27 stroke=%27%23ff6f00%27 stroke-width=%2712%27 filter=%27drop-shadow(0 0 15px rgba(255,111,0,0.6))%27/><path d=%27M190 256c30-40 80-40 110 0s80 40 110 0%27 stroke=%27%23ffb300%27 stroke-width=%278%27 fill=%27none%27 stroke-linecap=%27round%27/></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%27http://w3.org viewBox=%270 0 512 512%27><rect width=%27512%27 height=%27512%27 rx=%27120%27 fill=%27%23050206%27/><circle cx=%27256%27 cy=%27256%27 r=%27140%27 fill=%27none%27 stroke=%27%23ff6f00%27 stroke-width=%2712%27 filter=%27drop-shadow(0 0 15px rgba(255,111,0,0.6))%27/><path d=%27M190 256c30-40 80-40 110 0s80 40 110 0%27 stroke=%27%23ffb300%27 stroke-width=%278%27 fill=%27none%27 stroke-linecap=%27round%27/></svg>">
+
     <title>Liquid Dark Dashboard</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <div class="spotlight-aura spotlight-one"></div>
-    <div class="spotlight-aura spotlight-two"></div>
+    <!-- TIME AND STYLE CONTROLLED GRADIENT BACKGROUND SPOTLIGHTS -->
+    <div class="spotlight-aura spotlight-one" id="spot1"></div>
+    <div class="spotlight-aura spotlight-two" id="spot2"></div>
 
     <button class="focus-mode-toggle-btn" onclick="toggleFocusMode()" title="Toggle Focus Mode">👁️ Focus Mode</button>
 
     <div class="dashboard-wrapper">
-
-        <!-- SCREEN 1: CLOCK & MATCHING AUDIO CONTROLS -->
+        
+        <!-- SCREEN 1: CLOCK VIEW & IMMERSIVE AUDIO CONTROLS -->
         <section class="dashboard-screen" id="clockSec">
             <div class="glass-card element-reveal">
                 <div class="greeting-container hide-in-focus">
-                    <h2 class="greeting-text" id="greetingDisplay" onclick="editName()">Good morning, Alex!</h2>
+                    <h2 class="greeting-text" id="greetingDisplay" onclick="editName()">Good evening, Alex!</h2>
                     <div class="name-editor hidden" id="nameEditor">
-                        <input type="text" id="nameInput" maxlength="20" class="name-input">
+                        <input type="text" id="nameInput" maxlength="20" class="name-input" onkeydown="handleNameInputKey(event)">
                         <button class="btn-text" onclick="saveName()">Done</button>
                     </div>
                     <p class="greeting-subtext" id="greetingSubtext">Time to crush your goals today.</p>
                 </div>
 
-                <div class="clock-display">
-                    <div class="time-main" id="timeMain">00:00:00</div>
-                    <div class="time-ampm" id="timeAmpm">AM</div>
+                <div class="clock-display" onclick="toggleClockStyleMode()" title="Click to change clock face style">
+                    <div id="digitalClockView">
+                        <div class="time-main" id="timeMain">00:00:00</div>
+                        <div class="time-ampm" id="timeAmpm">AM</div>
+                    </div>
+                    <div id="analogClockView" class="hidden">
+                        <div class="analog-face">
+                            <div class="analog-hand hour" id="analogHour"></div>
+                            <div class="analog-hand minute" id="analogMin"></div>
+                            <div class="analog-hand second" id="analogSec"></div>
+                            <div class="analog-center-pin"></div>
+                        </div>
+                    </div>
                     <div class="date-sub" id="dateSub">LOADING DATE...</div>
                 </div>
 
-                <!-- MATCHING VECTOR AUDIO CONTROL PANEL MAP -->
                 <div class="soundscape-control-row hide-in-focus">
                     <button class="soundscape-pill" id="sound-rain" onclick="toggleAmbientSound('rain', 0.12)" title="Heavy Rain Shower">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M12 2v2M4.22 4.22l1.42 1.42M1 12h2M21 12h2M18.36 5.64l1.42-1.42M20 17.5c0 1.93-1.57 3.5-3.5 3.5h-9A4.5 4.5 0 0 1 3 16.5c0-2.2 1.63-4.03 3.75-4.43A6.002 6.002 0 0 1 18 11c0 .24-.01.48-.04.71A4.49 4.49 0 0 1 20 15.5v2z" />
-                        </svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v2M4.22 4.22l1.42 1.42M1 12h2M21 12h2M18.36 5.64l1.42-1.42M20 17.5c0 1.93-1.57 3.5-3.5 3.5h-9A4.5 4.5 0 0 1 3 16.5c0-2.2 1.63-4.03 3.75-4.43A6.002 6.002 0 0 1 18 11c0 .24-.01.48-.04.71A4.49 4.49 0 0 1 20 15.5v2z"/></svg>
                     </button>
                     <button class="soundscape-pill" id="sound-fire" onclick="toggleAmbientSound('fire', 0.16)" title="Crackling Campfire">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M12 2v2M4.22 4.22l1.42 1.42M1 12h2M21 12h2M18.36 5.64l1.42-1.42M5 17h14M7 21h10" />
-                        </svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v2M4.22 4.22l1.42 1.42M1 12h2M21 12h2M18.36 5.64l1.42-1.42M5 17h14M7 21h10"/></svg>
                     </button>
                     <button class="soundscape-pill" id="sound-white" onclick="toggleAmbientSound('white', 0.06)" title="Deep Static Noise">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M12 2v2M4.22 4.22l1.42 1.42M1 12h2M21 12h2M18.36 5.64l1.42-1.42M3 16h18M3 20h18" />
-                        </svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v2M4.22 4.22l1.42 1.42M1 12h2M21 12h2M18.36 5.64l1.42-1.42M3 16h18M3 20h18"/></svg>
                     </button>
                 </div>
 
@@ -56,7 +70,7 @@
             </div>
         </section>
 
-        <!-- SCREEN 2: MICRO GOALS OBJECTIVES PANEL -->
+        <!-- SCREEN 2: STANDALONE DAILY MICRO GOALS MANAGER -->
         <section class="dashboard-screen" id="goalsSec">
             <div class="glass-card element-reveal">
                 <div class="card-header-block">
@@ -74,17 +88,19 @@
             </div>
         </section>
 
-        <!-- SCREEN 3: COUNTDOWN TIMER -->
+        <!-- SCREEN 3: COUNTDOWN TIMER CARD -->
         <section id="timerSec" class="dashboard-screen">
             <div class="glass-card element-reveal">
-                <div class="timer-visual-container">
-                    <div class="liquid-container-ring"><div class="liquid-wave-element" id="liquidFill"></div></div>
-                    <div class="timer-text-overlay" id="countdownDisplay" onclick="openTimerSettings()">05:00</div>
+                <div class="timer-main-box">
+                    <div class="timer-visual-container">
+                        <div class="liquid-container-ring"><div class="liquid-wave-element" id="liquidFill"></div></div>
+                        <div class="timer-text-overlay" id="countdownDisplay" onclick="openTimerSettings()">05:00</div>
+                    </div>
                     <div class="timer-input-overlay hidden" id="timerInputOverlay">
                         <input type="text" id="inputMinutes" maxlength="2" value="05" oninput="this.value = this.value.replace(/[^0-9]/g, '')" onkeydown="handleTimerInputKey(event)">
                         <span>:</span>
                         <input type="text" id="inputSeconds" maxlength="2" value="00" oninput="this.value = this.value.replace(/[^0-9]/g, '')" onkeydown="handleTimerInputKey(event)">
-                        <div style="width:100%; margin-top:10px;"><button class="btn-text-small" onclick="saveTimerSettings()">Set Time</button></div>
+                        <button class="btn-text-small" onclick="saveTimerSettings()">Set Time</button>
                     </div>
                 </div>
                 <div class="timer-presets-row hide-in-focus">
@@ -92,12 +108,15 @@
                     <button class="preset-pill" onclick="loadTimerPreset(15)">⏱️ 15m</button>
                     <button class="preset-pill" onclick="loadTimerPreset(5)">⏱️ 5m</button>
                 </div>
+
+                <!-- COHESIVE LIQUID CUSTOMIZER SYSTEM THEME PICKER TRAY -->
                 <div class="color-customizer-tray hide-in-focus">
-                    <span class="theme-dot orange active" onclick="switchActiveThemeColor('orange')"></span>
-                    <span class="theme-dot mint" onclick="switchActiveThemeColor('mint')"></span>
-                    <span class="theme-dot cyan" onclick="switchActiveThemeColor('cyan')"></span>
-                    <span class="theme-dot magenta" onclick="switchActiveThemeColor('magenta')"></span>
+                    <span class="theme-dot orange active" onclick="switchActiveThemeColor('orange')" title="Amber Orange"></span>
+                    <span class="theme-dot mint" onclick="switchActiveThemeColor('mint')" title="Neon Mint"></span>
+                    <span class="theme-dot cyan" onclick="switchActiveThemeColor('cyan')" title="Icy Cyan"></span>
+                    <span class="theme-dot magenta" onclick="switchActiveThemeColor('magenta')" title="Cyber Magenta"></span>
                 </div>
+
                 <div class="timer-controls">
                     <button class="control-btn" onclick="cancelTimer()">Cancel</button>
                     <button class="control-btn btn-pause" id="pauseBtn" onclick="toggleTimer()">Start</button>
