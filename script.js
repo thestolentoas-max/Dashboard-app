@@ -164,60 +164,36 @@ function triggerDefaultChimeAlarm() {
         if (document.hidden && Notification.permission === "granted") new Notification("Timer Finished!");
     } catch (e) {}
 }
+// Configuration controls layer
 function toggleTimer() { if (isSettingUp) saveTimerSettings(); const btn = document.getElementById('pauseBtn'); if (isTimerRunning) { isTimerRunning = false; clearInterval(intervalId); btn.textContent = "Start"; btn.classList.remove('active'); } else { isTimerRunning = true; lastTimestamp = performance.now(); intervalId = setInterval(runTimerLoop, 50); btn.textContent = "Pause"; btn.classList.add('active'); } }
 function cancelTimer() { isTimerRunning = false; if (intervalId) clearInterval(intervalId); msLeft = totalMs; isSettingUp = false; document.getElementById('timerInputOverlay').classList.add('hidden'); document.getElementById('countdownDisplay').classList.remove('hidden'); document.getElementById('pauseBtn').textContent = "Start"; document.getElementById('pauseBtn').classList.remove('active'); renderTimerUi(); }
+// Setup configurations update nodes
 function openTimerSettings() { if (isTimerRunning) return; isSettingUp = true; document.getElementById('countdownDisplay').classList.add('hidden'); document.getElementById('timerInputOverlay').classList.remove('hidden'); const totalSecs = totalMs / 1000; document.getElementById('inputMinutes').value = String(Math.floor(totalSecs / 60)).padStart(2, '0'); document.getElementById('inputSeconds').value = String(totalSecs % 60).padStart(2, '0'); }
 function saveTimerSettings() { totalMs = ((parseInt(document.getElementById('inputMinutes').value) || 0) * 60 + Math.min(59, parseInt(document.getElementById('inputSeconds').value) || 0)) * 1000; msLeft = totalMs; isSettingUp = false; document.getElementById('timerInputOverlay').classList.add('hidden'); document.getElementById('countdownDisplay').classList.remove('hidden'); renderTimerUi(); }
 function handleTimerInputKey(e) { if (e.key === 'Enter') saveTimerSettings(); }
 function loadTimerPreset(mins) { if (isTimerRunning) return; totalMs = mins * 60 * 1000; msLeft = totalMs; renderTimerUi(); }
 
-// --- LIQUID FILL THEME CUSTOMIZER ---
+// --- LIQUID TIMER COLOR CONFIGURATION ---
 function switchActiveThemeColor(color) {
     currentSelectedLiquidTheme = color;
     localStorage.setItem('db-liquid-theme', color);
     document.body.classList.remove('liquid-orange', 'liquid-mint', 'liquid-cyan', 'liquid-magenta');
     document.body.classList.add(`liquid-${color}`);
     document.querySelectorAll('.theme-dot').forEach(dot => { dot.classList.toggle('active', dot.classList.contains(color)); });
-    generateNativeAppleTouchIcon(color);
+    
+    // LINKED TARGET ENGINE: Sets your new circular image as the main apple app icon resource pointer
+    const link = document.getElementById('apple-icon');
+    if (link) link.href = 'icon.png';
 }
 
-// --- DYNAMIC PNG APPLE APP ICON GENERATION PLATFORM ---
-function generateNativeAppleTouchIcon(colorThemeName) {
-    try {
-        const canv = document.createElement('canvas');
-        canv.width = 180; canv.height = 180;
-        const ctx = canv.getContext('2d');
-        
-        // Base dark matte layer background
-        ctx.fillStyle = '#050206'; ctx.fillRect(0, 0, 180, 180);
-        
-        // Dynamic fluid highlight mapping configurations
-        let accentHex = '#ff6f00';
-        if (colorThemeName === 'mint') accentHex = '#107c41';
-        else if (colorThemeName === 'cyan') accentHex = '#0078d4';
-        else if (colorThemeName === 'magenta') accentHex = '#b4009e';
-        
-        ctx.shadowColor = accentHex; ctx.shadowBlur = 15;
-        ctx.strokeStyle = accentHex; ctx.lineWidth = 6;
-        ctx.beginPath(); ctx.arc(90, 90, 50, 0, Math.PI * 2); ctx.stroke();
-        
-        ctx.shadowBlur = 0; ctx.fillStyle = '#ffffff';
-        ctx.beginPath(); ctx.moveTo(65, 95); ctx.bezierCurveTo(75, 75, 85, 75, 95, 95); ctx.bezierCurveTo(105, 115, 115, 115, 125, 95);
-        ctx.lineWidth = 4; ctx.strokeStyle = '#ffffff'; ctx.stroke();
-        
-        const link = document.getElementById('apple-icon');
-        if (link) link.href = canv.toDataURL('image/png');
-    } catch(e) {}
-}
-
-// --- BOOTSTRAP INITIALIZATION BOOT ---
+// --- SYSTEM WORKSPACE OBSERVERS INITIALIZATION ---
 const observer = new IntersectionObserver((entries) => { entries.forEach(e => e.target.classList.toggle('visible', e.isIntersecting)); }, { threshold: 0.15 });
 function scrollToSection(id) { const el = document.getElementById(id); if (el) el.scrollIntoView({ behavior: 'smooth' }); }
 document.querySelectorAll('.element-reveal').forEach(el => observer.observe(el));
 
 if (window.Notification && Notification.permission === "default") Notification.requestPermission();
 
-// Boot application operations sequentially
+// Boot application layout engines
 updateClockMechanics();
 switchActiveThemeColor(currentSelectedLiquidTheme);
 switchAmbientMotionStyle(activeAmbientMotionStyle);
