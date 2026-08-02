@@ -1,52 +1,194 @@
-html, body {
-    margin: 0; padding: 0; background-color: #050206; color: #ffffff;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; overflow-x: hidden;
-}
-.dashboard-wrapper {
-    width: 100vw; height: 100vh; overflow-y: scroll; scroll-snap-type: y mandatory; scroll-behavior: smooth;
-}
-.dashboard-screen {
-    width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; position: relative; box-sizing: border-box; scroll-snap-align: start; scroll-snap-stop: always;
-    background: radial-gradient(circle at 15% 50%, #200b1d 0%, transparent 45%), radial-gradient(circle at 85% 60%, #0d1624 0%, transparent 40%), #050206;
-}
-.element-reveal { opacity: 0; transform: translateY(30px); transition: opacity 1s ease, transform 1s ease; }
-.element-reveal.visible { opacity: 1; transform: translateY(0); }
-.glass-card {
-    width: 95%; max-width: 620px; height: 540px; background: rgba(25, 20, 28, 0.25); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 28px;
-    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6); padding: 35px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; box-sizing: border-box; backdrop-filter: blur(20px);
-}
-.greeting-text { font-size: 1.8rem; cursor: pointer; margin: 0; }
-.greeting-subtext { font-size: 0.95rem; color: #a5a0ac; margin-top: 5px; font-style: italic; }
-.name-input { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); color: white; border-radius: 8px; padding: 6px; text-align: center; }
-.btn-text { background: transparent; border: none; color: #ff9f0a; font-weight: bold; cursor: pointer; }
-.hidden { display: none !important; }
-.clock-display { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; }
-.time-main { font-size: 5.2rem; font-weight: 700; letter-spacing: -2px; }
-.time-ampm { font-size: 3.4rem; font-weight: 700; }
-.date-sub { font-size: 0.95rem; color: #79747e; letter-spacing: 2px; margin-top: 15px; }
-.card-header-text { font-size: 0.85rem; letter-spacing: 2px; color: #8c8694; margin-bottom: 15px; text-transform: uppercase; }
-.location-text { font-size: 1.4rem; margin-bottom: 5px; }
-.weather-icon-window { font-size: 3.5rem; height: 64px; display: flex; align-items: center; }
-.temperature-display { font-size: 5.2rem; font-weight: 300; }
-.weather-status-message { font-size: 1.1rem; color: #a5a0ac; margin-bottom: 15px; }
-.error-text { color: #837e8a !important; }
-.weather-controls-row { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; }
-#locationDropdown { background: rgba(25, 20, 28, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); color: white; padding: 8px; border-radius: 20px; width: 80%; max-width: 300px; font-family: inherit; outline: none; }
-#locationDropdown option { background: #120d16; color: white; }
-.weather-input-container { display: flex; background: rgba(255, 255, 255, 0.05); padding: 5px; border-radius: 30px; border: 1px solid rgba(255, 255, 255, 0.1); width: 80%; max-width: 300px; }
-.weather-input-container input { background: transparent; border: none; outline: none; color: white; padding-left: 15px; flex-grow: 1; font-family: inherit; }
+// --- STATE & PERSISTENT STORAGE MEMORY ---
+let userName = localStorage.getItem('db-name') || "Alex";
+let isAnalogClockMode = localStorage.getItem('db-clock-mode') === "analog";
+let activeAmbientMotionStyle = localStorage.getItem('db-ambient-motion') || "float";
+let currentSelectedLiquidTheme = localStorage.getItem('db-liquid-theme') || "orange";
+let myMicroGoalsList = JSON.parse(localStorage.getItem('db-micro-goals')) || [];
 
-/* TIMER VISUAL TANK SLOTS */
-.timer-visual-container { position: relative; width: 320px; height: 330px; display: flex; align-items: center; justify-content: center; }
-.liquid-container-ring { position: absolute; width: 100%; height: 100%; border-radius: 50%; border: 4px solid #1d121f; overflow: hidden; background: #09040c; }
-.liquid-wave-element { position: absolute; width: 200%; height: 200%; background: linear-gradient(180deg, #ffb300 0%, #ff6f00 100%); left: -50%; border-radius: 42%; animation: spinWave 10s linear infinite; transition: top 0.1s linear; top: 0%; }
-@keyframes spinWave { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-.timer-text-overlay { font-size: 4.8rem; font-weight: 300; position: relative; z-index: 5; cursor: pointer; }
-.timer-input-overlay { position: relative; z-index: 10; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
-.timer-input-overlay input { width: 75px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; color: white; font-size: 3.5rem; text-align: center; outline: none; font-family: inherit; }
-.timer-input-overlay span { font-size: 3rem; color: #ff9f0a; }
-.btn-text-small { background: #ff9f0a; border: none; color: #050206; padding: 6px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; }
-.scroll-prompt { font-size: 0.75rem; letter-spacing: 1.5px; color: #55505a; position: absolute; bottom: 20px; cursor: pointer; text-align: center; }
-.timer-controls { display: flex; gap: 100px; position: absolute; bottom: -85px; }
-.control-btn { width: 80px; height: 84px; border-radius: 50%; border: none; background-color: #1c191e; color: white; cursor: pointer; font-size: 0.9rem; }
-.btn-pause { color: #ff9f0a; } .btn-pause.active { background-color: #aa6600; color: white; }
+let totalMs = 300000, msLeft = 300000, isTimerRunning = false, isSettingUp = false;
+let intervalId = null, lastTimestamp = 0;
+let lastRecordedHour = -1;
+
+// --- WEB AUDIO CONTROLLERS ---
+let audioCtx = null, ambientNodes = {};
+function initAudioCtx() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+
+function makeWhiteNoiseSource() {
+    initAudioCtx();
+    const size = audioCtx.sampleRate * 2, buffer = audioCtx.createBuffer(1, size, audioCtx.sampleRate), data = buffer.getChannelData(0);
+    for (let i = 0; i < size; i++) { data[i] = Math.random() * 2 - 1; }
+    const node = audioCtx.createBufferSource(); node.buffer = buffer; node.loop = true;
+    return node;
+}
+
+function toggleAmbientSound(type, vol) {
+    try {
+        initAudioCtx();
+        if (ambientNodes[type]) {
+            ambientNodes[type].src.stop(); ambientNodes[type].gain.disconnect();
+            delete ambientNodes[type]; document.getElementById(`sound-${type}`).classList.remove('active');
+            return;
+        }
+        const gain = audioCtx.createGain(); gain.gain.setValueAtTime(vol, audioCtx.currentTime); gain.connect(audioCtx.destination);
+        let src = makeWhiteNoiseSource(); const filter = audioCtx.createBiquadFilter();
+        
+        if (type === 'rain') { filter.type = 'lowpass'; filter.frequency.setValueAtTime(450, audioCtx.currentTime); }
+        else if (type === 'fire') { filter.type = 'bandpass'; filter.frequency.setValueAtTime(1000, audioCtx.currentTime); filter.Q.setValueAtTime(2.5, audioCtx.currentTime); }
+        else { filter.type = 'lowpass'; filter.frequency.setValueAtTime(1200, audioCtx.currentTime); }
+        
+        src.connect(filter); filter.connect(gain); src.start();
+        ambientNodes[type] = { src: src, gain: gain }; document.getElementById(`sound-${type}`).classList.add('active');
+    } catch(e){}
+}
+
+// --- DYNAMIC BACKGROUND CONTROL LOGIC MATRICES ---
+function updateColorTemperatureTheme() {
+    const hr = new Date().getHours();
+    let computedTheme = "noon";
+    let greetingText = "Good morning";
+    
+    if (hr >= 5 && hr < 12) {
+        computedTheme = "morning"; greetingText = "Good morning";
+    } else if (hr >= 12 && hr < 17) {
+        computedTheme = "noon"; greetingText = "Good afternoon";
+    } else if (hr >= 17 && hr < 21) {
+        computedTheme = "evening"; greetingText = "Good evening";
+    } else {
+        computedTheme = "midnight"; greetingText = "Good night";
+    }
+    
+    document.body.classList.remove('time-morning', 'time-noon', 'time-evening', 'time-midnight');
+    document.body.classList.add(`time-${computedTheme}`);
+    
+    const displayHeader = document.getElementById('greetingDisplay');
+    if (displayHeader && !displayHeader.classList.contains('hidden')) {
+        displayHeader.textContent = `${greetingText}, ${userName}!`;
+    }
+}
+
+function switchAmbientMotionStyle(styleMode) {
+    activeAmbientMotionStyle = styleMode;
+    localStorage.setItem('db-ambient-motion', styleMode);
+    
+    document.body.classList.remove('fx-float', 'fx-orbit', 'fx-breath');
+    document.body.classList.add(`fx-${styleMode}`);
+    
+    document.querySelectorAll('.style-select-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.id === `fx-${styleMode}`);
+    });
+}
+
+// --- CLOCK CONTROLLER METRICS ---
+function updateClockMechanics() {
+    const now = new Date(), hr = now.getHours(), min = now.getMinutes(), sec = now.getSeconds();
+    
+    const timeMainEl = document.getElementById('timeMain');
+    if (timeMainEl) {
+        timeMainEl.textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+        document.getElementById('timeAmpm').textContent = hr >= 12 ? 'PM' : 'AM';
+        document.getElementById('dateSub').textContent = now.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase();
+        
+        document.getElementById('analogHour').style.transform = `translateX(-50%) rotate(${(hr * 30) + (min * 0.5)}deg)`;
+        document.getElementById('analogMin').style.transform = `translateX(-50%) rotate(${(min * 6)}deg)`;
+        document.getElementById('analogSec').style.transform = `translateX(-50%) rotate(${(sec * 6)}deg)`;
+    }
+    
+    if (hr !== lastRecordedHour || sec === 0) {
+        lastRecordedHour = hr;
+        updateColorTemperatureTheme();
+    }
+}
+setInterval(updateClockMechanics, 1000);
+
+function toggleClockStyleMode() {
+    isAnalogClockMode = !isAnalogClockMode;
+    localStorage.setItem('db-clock-mode', isAnalogClockMode ? "analog" : "digital");
+    syncClockFaceDisplay();
+}
+function syncClockFaceDisplay() {
+    document.getElementById('digitalClockView').classList.toggle('hidden', isAnalogClockMode);
+    document.getElementById('analogClockView').classList.toggle('hidden', !isAnalogClockMode);
+}
+function editName() { document.getElementById('greetingDisplay').classList.add('hidden'); document.getElementById('nameEditor').classList.remove('hidden'); const inputNode = document.getElementById('nameInput'); inputNode.value = userName; inputNode.focus(); }
+function saveName() { const val = document.getElementById('nameInput').value.trim(); if (val) { userName = val; localStorage.setItem('db-name', val); } document.getElementById('nameEditor').classList.add('hidden'); document.getElementById('greetingDisplay').classList.remove('hidden'); updateClockMechanics(); }
+function handleNameInputKey(e) { if (e.key === 'Enter') saveName(); }
+function toggleFocusMode() { const w = document.querySelector('.dashboard-wrapper'); w.classList.toggle('focus-active'); const isF = w.classList.contains('focus-active'); document.querySelector('.focus-mode-toggle-btn').textContent = isF ? "👁️ Exit Focus" : "👁️ Focus Mode"; }
+// --- MICRO GOALS CHECKLIST PANEL LOGIC ---
+function renderMicroGoalsChecklist() {
+    const container = document.getElementById('checklistItemsContainer'); if (!container) return;
+    container.innerHTML = "";
+    myMicroGoalsList.forEach((goal, index) => {
+        const row = document.createElement('div'); row.className = "goal-item-row";
+        const leftBlock = document.createElement('div'); leftBlock.className = `goal-left-block ${goal.complete ? 'complete' : ''}`;
+        const checkbox = document.createElement('input'); checkbox.type = "checkbox"; checkbox.checked = goal.complete; checkbox.onclick = () => toggleGoalItemStatus(index);
+        const textSpan = document.createElement('span'); textSpan.textContent = goal.text;
+        leftBlock.appendChild(checkbox); leftBlock.appendChild(textSpan);
+        const delBtn = document.createElement('button'); delBtn.className = "goal-delete-btn"; delBtn.textContent = "🗑️"; delBtn.onclick = () => removeMicroGoalItem(index);
+        row.appendChild(leftBlock); row.appendChild(delBtn); container.appendChild(row);
+    });
+}
+function addMicroGoalItem() {
+    const node = document.getElementById('goalTextInput'), val = node.value.trim(); if (!val) return;
+    myMicroGoalsList.push({ text: val, complete: false }); localStorage.setItem('db-micro-goals', JSON.stringify(myMicroGoalsList));
+    node.value = ""; renderMicroGoalsChecklist();
+}
+function handleGoalInputKey(e) { if (e.key === 'Enter') addMicroGoalItem(); }
+function toggleGoalItemStatus(index) { myMicroGoalsList[index].complete = !myMicroGoalsList[index].complete; localStorage.setItem('db-micro-goals', JSON.stringify(myMicroGoalsList)); renderMicroGoalsChecklist(); }
+function removeMicroGoalItem(index) { myMicroGoalsList.splice(index, 1); localStorage.setItem('db-micro-goals', JSON.stringify(myMicroGoalsList)); renderMicroGoalsChecklist(); }
+
+// --- TIMER MECHANICAL LIFECYCLE ENGINE ---
+function runTimerLoop() {
+    if (!isTimerRunning) return;
+    const now = performance.now(); msLeft -= (now - lastTimestamp); lastTimestamp = now;
+    if (msLeft <= 0) {
+        msLeft = 0; isTimerRunning = false; clearInterval(intervalId); intervalId = null;
+        document.getElementById('pauseBtn').textContent = "Start"; document.getElementById('pauseBtn').classList.remove('active');
+        triggerDefaultChimeAlarm();
+    }
+    renderTimerUi();
+}
+function renderTimerUi() {
+    const totalSecs = Math.ceil(msLeft / 1000);
+    document.getElementById('countdownDisplay').textContent = `${String(Math.floor(totalSecs / 60)).padStart(2, '0')}:${String(totalSecs % 60).padStart(2, '0')}`;
+    const fillNode = document.getElementById('liquidFill'); if (fillNode) { fillNode.style.top = `${(1 - (msLeft / totalMs)) * 100}%`; if (msLeft < 30000 && msLeft > 0) { fillNode.classList.add('timer-critical'); } else { fillNode.classList.remove('timer-critical'); } }
+}
+function triggerDefaultChimeAlarm() {
+    try {
+        initAudioCtx(); const tonesList = [523.25, 659.25, 783.99];
+        tonesList.forEach((frequency) => {
+            const osc = audioCtx.createOscillator(), gainNode = audioCtx.createGain();
+            osc.type = 'sine'; osc.frequency.setValueAtTime(frequency, audioCtx.currentTime);
+            gainNode.gain.setValueAtTime(0.25, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.001, application.currentTime + 1.2);
+            osc.connect(gainNode); gainNode.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 1.2);
+        });
+        if (document.hidden && Notification.permission === "granted") new Notification("Timer Finished!");
+    } catch (e) {}
+}
+function toggleTimer() { if (isSettingUp) saveTimerSettings(); const btn = document.getElementById('pauseBtn'); if (isTimerRunning) { isTimerRunning = false; clearInterval(intervalId); btn.textContent = "Start"; btn.classList.remove('active'); } else { isTimerRunning = true; lastTimestamp = performance.now(); intervalId = setInterval(runTimerLoop, 50); btn.textContent = "Pause"; btn.classList.add('active'); } }
+function cancelTimer() { isTimerRunning = false; if (intervalId) clearInterval(intervalId); msLeft = totalMs; isSettingUp = false; document.getElementById('timerInputOverlay').classList.add('hidden'); document.getElementById('countdownDisplay').classList.remove('hidden'); document.getElementById('pauseBtn').textContent = "Start"; document.getElementById('pauseBtn').classList.remove('active'); renderTimerUi(); }
+function openTimerSettings() { if (isTimerRunning) return; isSettingUp = true; document.getElementById('countdownDisplay').classList.add('hidden'); document.getElementById('timerInputOverlay').classList.remove('hidden'); const totalSecs = totalMs / 1000; document.getElementById('inputMinutes').value = String(Math.floor(totalSecs / 60)).padStart(2, '0'); document.getElementById('inputSeconds').value = String(totalSecs % 60).padStart(2, '0'); }
+function saveTimerSettings() { totalMs = ((parseInt(document.getElementById('inputMinutes').value) || 0) * 60 + Math.min(59, parseInt(document.getElementById('inputSeconds').value) || 0)) * 1000; msLeft = totalMs; isSettingUp = false; document.getElementById('timerInputOverlay').classList.add('hidden'); document.getElementById('countdownDisplay').classList.remove('hidden'); renderTimerUi(); }
+function handleTimerInputKey(e) { if (e.key === 'Enter') saveTimerSettings(); }
+function loadTimerPreset(mins) { if (isTimerRunning) return; totalMs = mins * 60 * 1000; msLeft = totalMs; renderTimerUi(); }
+
+// --- LIQUID TIMER COLOR CONFIGURATION & IOS SHORTCUT LINK ---
+function switchActiveThemeColor(color) {
+    currentSelectedLiquidTheme = color;
+    localStorage.setItem('db-liquid-theme', color);
+    document.body.classList.remove('liquid-orange', 'liquid-mint', 'liquid-cyan', 'liquid-magenta');
+    document.body.classList.add(`liquid-${color}`);
+    document.querySelectorAll('.theme-dot').forEach(dot => { dot.classList.toggle('active', dot.classList.contains(color)); });
+    const link = document.getElementById('apple-icon'); if (link) link.href = 'icon.png';
+}
+
+// --- BOOTSTRAP OPERATIONAL PIPES ---
+function scrollToSection(id) { const el = document.getElementById(id); if (el) el.scrollIntoView({ behavior: 'smooth' }); }
+if (window.Notification && Notification.permission === "default") Notification.requestPermission();
+
+// Boot application layout engines
+updateClockMechanics();
+switchActiveThemeColor(currentSelectedLiquidTheme);
+switchAmbientMotionStyle(activeAmbientMotionStyle);
+syncClockFaceDisplay();
+renderMicroGoalsChecklist();
+renderTimerUi();
