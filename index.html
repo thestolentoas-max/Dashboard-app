@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liquid Dark Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="dashboard-wrapper">
+        <!-- SCREEN 1: CLOCK -->
+        <section class="dashboard-screen" id="clockSec">
+            <div class="glass-card element-reveal">
+                <div class="greeting-container">
+                    <h2 class="greeting-text" id="greetingDisplay" onclick="editName()">Good morning, Alex!</h2>
+                    <div class="name-editor hidden" id="nameEditor">
+                        <input type="text" id="nameInput" maxlength="20" class="name-input">
+                        <button class="btn-text" onclick="saveName()">Done</button>
+                    </div>
+                    <p class="greeting-subtext" id="greetingSubtext">Time to crush your goals today.</p>
+                </div>
+                <div class="clock-display">
+                    <div class="time-main" id="timeMain">00:00:00</div>
+                    <div class="time-ampm" id="timeAmpm">AM</div>
+                    <div class="date-sub" id="dateSub">LOADING DATE...</div>
+                </div>
+                <div class="scroll-prompt" onclick="scrollToSection('weatherSec')">SCROLL FOR WEATHER<div class="arrow">↓</div></div>
+            </div>
+        </section>
+
+        <!-- SCREEN 2: WEATHER -->
+        <section id="weatherSec" class="dashboard-screen">
+            <div class="glass-card element-reveal">
+                <h4 class="card-header-text">LOCAL WEATHER</h4>
+                <div class="location-text" id="weatherLocation">Detecting City...</div>
+                <div class="weather-icon-window" id="weatherIconContainer">☀️</div>
+                <div class="temperature-display" id="weatherTemp">--°C</div>
+                <div class="weather-status-message" id="weatherMessage">Loading...</div>
+                <div class="weather-controls-row">
+                    <select id="locationDropdown" onchange="handleDropdownLocationChange()">
+                        <option value="auto">📍 Auto (Melbourne)</option>
+                        <option value="melbourne">Melbourne, AU</option>
+                        <option value="sydney">Sydney, AU</option>
+                        <option value="london">London, UK</option>
+                        <option value="newyork">New York, US</option>
+                        <option value="tokyo">Tokyo, JP</option>
+                    </select>
+                    <div class="weather-input-container">
+                        <input type="text" id="citySearchInput" placeholder="Or type any city..." onkeydown="handleWeatherSearchKey(event)">
+                        <button class="btn-text-small" onclick="fetchCustomLocationWeather()">Search</button>
+                    </div>
+                </div>
+                <div class="scroll-prompt" onclick="scrollToSection('timerSec')">SCROLL FOR TIMER<div class="arrow">↓</div></div>
+            </div>
+        </section>
+
+        <!-- SCREEN 3: TIMER -->
+        <section id="timerSec" class="dashboard-screen">
+            <div class="glass-card element-reveal flex-center">
+                <div class="timer-visual-container">
+                    <div class="liquid-container-ring"><div class="liquid-wave-element" id="liquidFill"></div></div>
+                    <div class="timer-text-overlay" id="countdownDisplay" onclick="openTimerSettings()">05:00</div>
+                    <div class="timer-input-overlay hidden" id="timerInputOverlay">
+                        <input type="text" id="inputMinutes" maxlength="2" value="05" oninput="this.value = this.value.replace(/[^0-9]/g, '')" onkeydown="handleTimerInputKey(event)">
+                        <span>:</span>
+                        <input type="text" id="inputSeconds" maxlength="2" value="00" oninput="this.value = this.value.replace(/[^0-9]/g, '')" onkeydown="handleTimerInputKey(event)">
+                        <div style="width:100%; margin-top:10px;"><button class="btn-text-small" onclick="saveTimerSettings()">Set Time</button></div>
+                    </div>
+                </div>
+                <div class="timer-controls">
+                    <button class="control-btn" onclick="cancelTimer()">Cancel</button>
+                    <button class="control-btn btn-pause" id="pauseBtn" onclick="toggleTimer()">Start</button>
+                </div>
+            </div>
+        </section>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

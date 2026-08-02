@@ -1,0 +1,320 @@
+html, body {
+    margin: 0;
+    padding: 0;
+    background-color: #050206;
+    color: #ffffff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    overflow-x: hidden;
+}
+
+.dashboard-wrapper {
+    width: 100vw;
+    height: 100vh;
+    overflow-y: scroll;
+    scroll-snap-type: y mandatory;
+    scroll-behavior: smooth;
+}
+
+.dashboard-screen {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    box-sizing: border-box;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+    background: radial-gradient(circle at 15% 50%, #200b1d 0%, transparent 45%), radial-gradient(circle at 85% 60%, #0d1624 0%, transparent 40%), #050206;
+}
+
+.element-reveal {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 1s ease, transform 1s ease;
+}
+
+    .element-reveal.visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+.glass-card {
+    width: 95%;
+    max-width: 620px;
+    height: 540px;
+    background: rgba(25, 20, 28, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 28px;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+    padding: 35px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    box-sizing: border-box;
+    backdrop-filter: blur(20px);
+}
+
+.greeting-text {
+    font-size: 1.8rem;
+    cursor: pointer;
+    margin: 0;
+}
+
+.greeting-subtext {
+    font-size: 0.95rem;
+    color: #a5a0ac;
+    margin-top: 5px;
+    font-style: italic;
+}
+
+.name-input {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: white;
+    border-radius: 8px;
+    padding: 6px;
+    text-align: center;
+}
+
+.btn-text {
+    background: transparent;
+    border: none;
+    color: #ff9f0a;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.clock-display {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.time-main {
+    font-size: 5.2rem;
+    font-weight: 700;
+    letter-spacing: -2px;
+}
+
+.time-ampm {
+    font-size: 3.4rem;
+    font-weight: 700;
+}
+
+.date-sub {
+    font-size: 0.95rem;
+    color: #79747e;
+    letter-spacing: 2px;
+    margin-top: 15px;
+}
+
+.card-header-text {
+    font-size: 0.85rem;
+    letter-spacing: 2px;
+    color: #8c8694;
+    margin-bottom: 15px;
+    text-transform: uppercase;
+}
+
+.location-text {
+    font-size: 1.4rem;
+    margin-bottom: 5px;
+}
+
+.weather-icon-window {
+    font-size: 3.5rem;
+    height: 64px;
+    display: flex;
+    align-items: center;
+}
+
+.temperature-display {
+    font-size: 5.2rem;
+    font-weight: 300;
+}
+
+.weather-status-message {
+    font-size: 1.1rem;
+    color: #a5a0ac;
+    margin-bottom: 15px;
+}
+
+.error-text {
+    color: #837e8a !important;
+}
+
+.weather-controls-row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
+
+#locationDropdown {
+    background: rgba(25, 20, 28, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    padding: 8px;
+    border-radius: 20px;
+    width: 80%;
+    max-width: 300px;
+    font-family: inherit;
+    outline: none;
+}
+
+    #locationDropdown option {
+        background: #120d16;
+        color: white;
+    }
+
+.weather-input-container {
+    display: flex;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 5px;
+    border-radius: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    width: 80%;
+    max-width: 300px;
+}
+
+    .weather-input-container input {
+        background: transparent;
+        border: none;
+        outline: none;
+        color: white;
+        padding-left: 15px;
+        flex-grow: 1;
+        font-family: inherit;
+    }
+
+/* TIMER VISUAL TANK SLOTS */
+.timer-visual-container {
+    position: relative;
+    width: 320px;
+    height: 330px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.liquid-container-ring {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 4px solid #1d121f;
+    overflow: hidden;
+    background: #09040c;
+}
+
+.liquid-wave-element {
+    position: absolute;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(180deg, #ffb300 0%, #ff6f00 100%);
+    left: -50%;
+    border-radius: 42%;
+    animation: spinWave 10s linear infinite;
+    transition: top 0.1s linear;
+    top: 0%;
+}
+
+@keyframes spinWave {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.timer-text-overlay {
+    font-size: 4.8rem;
+    font-weight: 300;
+    position: relative;
+    z-index: 5;
+    cursor: pointer;
+}
+
+.timer-input-overlay {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+    .timer-input-overlay input {
+        width: 75px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        color: white;
+        font-size: 3.5rem;
+        text-align: center;
+        outline: none;
+        font-family: inherit;
+    }
+
+    .timer-input-overlay span {
+        font-size: 3rem;
+        color: #ff9f0a;
+    }
+
+.btn-text-small {
+    background: #ff9f0a;
+    border: none;
+    color: #050206;
+    padding: 6px 20px;
+    border-radius: 20px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.scroll-prompt {
+    font-size: 0.75rem;
+    letter-spacing: 1.5px;
+    color: #55505a;
+    position: absolute;
+    bottom: 20px;
+    cursor: pointer;
+    text-align: center;
+}
+
+.timer-controls {
+    display: flex;
+    gap: 100px;
+    position: absolute;
+    bottom: -85px;
+}
+
+.control-btn {
+    width: 80px;
+    height: 84px;
+    border-radius: 50%;
+    border: none;
+    background-color: #1c191e;
+    color: white;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.btn-pause {
+    color: #ff9f0a;
+}
+
+    .btn-pause.active {
+        background-color: #aa6600;
+        color: white;
+    }
