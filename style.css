@@ -1,194 +1,126 @@
-// --- STATE & PERSISTENT STORAGE MEMORY ---
-let userName = localStorage.getItem('db-name') || "Alex";
-let isAnalogClockMode = localStorage.getItem('db-clock-mode') === "analog";
-let activeAmbientMotionStyle = localStorage.getItem('db-ambient-motion') || "float";
-let currentSelectedLiquidTheme = localStorage.getItem('db-liquid-theme') || "orange";
-let myMicroGoalsList = JSON.parse(localStorage.getItem('db-micro-goals')) || [];
-
-let totalMs = 300000, msLeft = 300000, isTimerRunning = false, isSettingUp = false;
-let intervalId = null, lastTimestamp = 0;
-let lastRecordedHour = -1;
-
-// --- WEB AUDIO CONTROLLERS ---
-let audioCtx = null, ambientNodes = {};
-function initAudioCtx() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
-
-function makeWhiteNoiseSource() {
-    initAudioCtx();
-    const size = audioCtx.sampleRate * 2, buffer = audioCtx.createBuffer(1, size, audioCtx.sampleRate), data = buffer.getChannelData(0);
-    for (let i = 0; i < size; i++) { data[i] = Math.random() * 2 - 1; }
-    const node = audioCtx.createBufferSource(); node.buffer = buffer; node.loop = true;
-    return node;
+:root {
+    --theme-primary: #ff6f00; --theme-secondary: #ffb300; --theme-glow: rgba(255, 111, 0, 0.3);
+    --spot-one-color: rgba(32,11,29,0.7); --spot-two-color: rgba(13,22,36,0.7);
+}
+body.theme-mint {
+    --theme-primary: #107c41; --theme-secondary: #1a9c58; --theme-glow: rgba(16, 124, 65, 0.3);
+    --spot-one-color: rgba(11,32,18,0.7); --spot-two-color: rgba(10,20,30,0.7);
+}
+body.theme-cyan {
+    --theme-primary: #0078d4; --theme-secondary: #00bcf2; --theme-glow: rgba(0, 120, 212, 0.3);
+    --spot-one-color: rgba(10,26,36,0.7); --spot-two-color: rgba(20,11,32,0.7);
+}
+body.theme-magenta {
+    --theme-primary: #b4009e; --theme-secondary: #e3008c; --theme-glow: rgba(180, 0, 158, 0.3);
+    --spot-one-color: rgba(36,10,32,0.7); --spot-two-color: rgba(11,15,32,0.7);
 }
 
-function toggleAmbientSound(type, vol) {
-    try {
-        initAudioCtx();
-        if (ambientNodes[type]) {
-            ambientNodes[type].src.stop(); ambientNodes[type].gain.disconnect();
-            delete ambientNodes[type]; document.getElementById(`sound-${type}`).classList.remove('active');
-            return;
-        }
-        const gain = audioCtx.createGain(); gain.gain.setValueAtTime(vol, audioCtx.currentTime); gain.connect(audioCtx.destination);
-        let src = makeWhiteNoiseSource(); const filter = audioCtx.createBiquadFilter();
-        
-        if (type === 'rain') { filter.type = 'lowpass'; filter.frequency.setValueAtTime(450, audioCtx.currentTime); }
-        else if (type === 'fire') { filter.type = 'bandpass'; filter.frequency.setValueAtTime(1000, audioCtx.currentTime); filter.Q.setValueAtTime(2.5, audioCtx.currentTime); }
-        else { filter.type = 'lowpass'; filter.frequency.setValueAtTime(1200, audioCtx.currentTime); }
-        
-        src.connect(filter); filter.connect(gain); src.start();
-        ambientNodes[type] = { src: src, gain: gain }; document.getElementById(`sound-${type}`).classList.add('active');
-    } catch(e){}
+html, body {
+    margin: 0; padding: 0; background-color: #050206; color: #ffffff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; overflow: hidden;
 }
+.dashboard-wrapper {
+    width: 100vw; height: 100vh; overflow-y: scroll; scroll-snap-type: y mandatory;
+    scroll-behavior: smooth; position: relative; z-index: 2;
+}
+.dashboard-screen { 
+    width: 100vw; height: 100vh; display: flex; align-items: center; 
+    justify-content: center; position: relative; box-sizing: border-box; scroll-snap-align: start; scroll-snap-stop: always;
+}
+.element-reveal { 
+    opacity: 0; transform: translateY(20px) scale(0.98); 
+    transition: opacity 0.8s cubic-bezier(0.25, 1, 0.5, 1), transform 0.8s cubic-bezier(0.25, 1, 0.5, 1); 
+}
+.element-reveal.visible { opacity: 1; transform: translateY(0) scale(1); }
 
-// --- DYNAMIC BACKGROUND CONTROL LOGIC MATRICES ---
-function updateColorTemperatureTheme() {
-    const hr = new Date().getHours();
-    let computedTheme = "noon";
-    let greetingText = "Good morning";
-    
-    if (hr >= 5 && hr < 12) {
-        computedTheme = "morning"; greetingText = "Good morning";
-    } else if (hr >= 12 && hr < 17) {
-        computedTheme = "noon"; greetingText = "Good afternoon";
-    } else if (hr >= 17 && hr < 21) {
-        computedTheme = "evening"; greetingText = "Good evening";
-    } else {
-        computedTheme = "midnight"; greetingText = "Good night";
-    }
-    
-    document.body.classList.remove('time-morning', 'time-noon', 'time-evening', 'time-midnight');
-    document.body.classList.add(`time-${computedTheme}`);
-    
-    const displayHeader = document.getElementById('greetingDisplay');
-    if (displayHeader && !displayHeader.classList.contains('hidden')) {
-        displayHeader.textContent = `${greetingText}, ${userName}!`;
-    }
-}
+.spotlight-aura { position: fixed; width: 70vw; height: 65vw; border-radius: 50%; filter: blur(140px); mix-blend-mode: screen; pointer-events: none; z-index: 1; opacity: 0.6; transition: background 0.6s ease; }
+.spotlight-one { background: radial-gradient(circle, var(--spot-one-color) 0%, rgba(5,2,6,0) 70%); top: -10%; left: -10%; animation: driftSpotlightOne 22s ease-in-out infinite alternate; }
+.spotlight-two { background: radial-gradient(circle, var(--spot-two-color) 0%, rgba(5,2,6,0) 70%); bottom: -10%; right: -10%; animation: driftSpotlightTwo 26s ease-in-out infinite alternate; }
+@keyframes driftSpotlightOne { 0% { transform: translate(0, 0); } 50% { transform: translate(20vw, 15vh); } 100% { transform: translate(5vw, 30vh); } }
+@keyframes driftSpotlightTwo { 0% { transform: translate(0, 0); } 50% { transform: translate(-15vw, -20vh); } 100% { transform: translate(-30vw, -5vh); } }
 
-function switchAmbientMotionStyle(styleMode) {
-    activeAmbientMotionStyle = styleMode;
-    localStorage.setItem('db-ambient-motion', styleMode);
-    
-    document.body.classList.remove('fx-float', 'fx-orbit', 'fx-breath');
-    document.body.classList.add(`fx-${styleMode}`);
-    
-    document.querySelectorAll('.style-select-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.id === `fx-${styleMode}`);
-    });
-}
+.glass-card { width: 90%; max-width: 520px; height: 500px; background: rgba(20, 16, 24, 0.35); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 24px; box-shadow: 0 30px 70px rgba(0, 0, 0, 0.6); padding: 35px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; position: relative; box-sizing: border-box; backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); transition: all 0.4s ease; }
+.greeting-container { text-align: center; width: 100%; }
+.greeting-text { font-size: 1.5rem; cursor: pointer; margin: 0; color: #e0dedf; font-weight: 400; }
+.greeting-subtext { font-size: 0.85rem; color: #8c8694; margin-top: 4px; }
+.name-input { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); color: white; border-radius: 8px; padding: 4px 12px; text-align: center; outline: none; font-size: 1rem; }
+.btn-text { background: transparent; border: none; color: var(--theme-secondary); font-weight: bold; cursor: pointer; }
+.hidden { display: none !important; }
+.clock-display { width: 100%; text-align: center; display: flex; flex-direction: column; justify-content: center; margin: 10px 0; }
+.time-main { font-size: 4.4rem; font-weight: 700; letter-spacing: -2px; line-height: 1; }
+.time-ampm { font-size: 2.2rem; font-weight: 500; margin-top: 2px; color: #a5a0ac; }
+.date-sub { font-size: 0.85rem; color: #6e6977; letter-spacing: 2px; margin-top: 8px; }
 
-// --- CLOCK CONTROLLER METRICS ---
-function updateClockMechanics() {
-    const now = new Date(), hr = now.getHours(), min = now.getMinutes(), sec = now.getSeconds();
-    
-    const timeMainEl = document.getElementById('timeMain');
-    if (timeMainEl) {
-        timeMainEl.textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-        document.getElementById('timeAmpm').textContent = hr >= 12 ? 'PM' : 'AM';
-        document.getElementById('dateSub').textContent = now.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase();
-        
-        document.getElementById('analogHour').style.transform = `translateX(-50%) rotate(${(hr * 30) + (min * 0.5)}deg)`;
-        document.getElementById('analogMin').style.transform = `translateX(-50%) rotate(${(min * 6)}deg)`;
-        document.getElementById('analogSec').style.transform = `translateX(-50%) rotate(${(sec * 6)}deg)`;
-    }
-    
-    if (hr !== lastRecordedHour || sec === 0) {
-        lastRecordedHour = hr;
-        updateColorTemperatureTheme();
-    }
-}
-setInterval(updateClockMechanics, 1000);
+.card-header-block { text-align: center; width: 100%; }
+.card-header-text { font-size: 1.1rem; letter-spacing: 2px; color: var(--theme-secondary); margin: 0 0 4px 0; font-weight: 600; }
+.card-header-sub { font-size: 0.8rem; color: #6e6977; margin: 0; }
 
-function toggleClockStyleMode() {
-    isAnalogClockMode = !isAnalogClockMode;
-    localStorage.setItem('db-clock-mode', isAnalogClockMode ? "analog" : "digital");
-    syncClockFaceDisplay();
-}
-function syncClockFaceDisplay() {
-    document.getElementById('digitalClockView').classList.toggle('hidden', isAnalogClockMode);
-    document.getElementById('analogClockView').classList.toggle('hidden', !isAnalogClockMode);
-}
-function editName() { document.getElementById('greetingDisplay').classList.add('hidden'); document.getElementById('nameEditor').classList.remove('hidden'); const inputNode = document.getElementById('nameInput'); inputNode.value = userName; inputNode.focus(); }
-function saveName() { const val = document.getElementById('nameInput').value.trim(); if (val) { userName = val; localStorage.setItem('db-name', val); } document.getElementById('nameEditor').classList.add('hidden'); document.getElementById('greetingDisplay').classList.remove('hidden'); updateClockMechanics(); }
-function handleNameInputKey(e) { if (e.key === 'Enter') saveName(); }
-function toggleFocusMode() { const w = document.querySelector('.dashboard-wrapper'); w.classList.toggle('focus-active'); const isF = w.classList.contains('focus-active'); document.querySelector('.focus-mode-toggle-btn').textContent = isF ? "👁️ Exit Focus" : "👁️ Focus Mode"; }
-// --- MICRO GOALS CHECKLIST PANEL LOGIC ---
-function renderMicroGoalsChecklist() {
-    const container = document.getElementById('checklistItemsContainer'); if (!container) return;
-    container.innerHTML = "";
-    myMicroGoalsList.forEach((goal, index) => {
-        const row = document.createElement('div'); row.className = "goal-item-row";
-        const leftBlock = document.createElement('div'); leftBlock.className = `goal-left-block ${goal.complete ? 'complete' : ''}`;
-        const checkbox = document.createElement('input'); checkbox.type = "checkbox"; checkbox.checked = goal.complete; checkbox.onclick = () => toggleGoalItemStatus(index);
-        const textSpan = document.createElement('span'); textSpan.textContent = goal.text;
-        leftBlock.appendChild(checkbox); leftBlock.appendChild(textSpan);
-        const delBtn = document.createElement('button'); delBtn.className = "goal-delete-btn"; delBtn.textContent = "🗑️"; delBtn.onclick = () => removeMicroGoalItem(index);
-        row.appendChild(leftBlock); row.appendChild(delBtn); container.appendChild(row);
-    });
-}
-function addMicroGoalItem() {
-    const node = document.getElementById('goalTextInput'), val = node.value.trim(); if (!val) return;
-    myMicroGoalsList.push({ text: val, complete: false }); localStorage.setItem('db-micro-goals', JSON.stringify(myMicroGoalsList));
-    node.value = ""; renderMicroGoalsChecklist();
-}
-function handleGoalInputKey(e) { if (e.key === 'Enter') addMicroGoalItem(); }
-function toggleGoalItemStatus(index) { myMicroGoalsList[index].complete = !myMicroGoalsList[index].complete; localStorage.setItem('db-micro-goals', JSON.stringify(myMicroGoalsList)); renderMicroGoalsChecklist(); }
-function removeMicroGoalItem(index) { myMicroGoalsList.splice(index, 1); localStorage.setItem('db-micro-goals', JSON.stringify(myMicroGoalsList)); renderMicroGoalsChecklist(); }
+.focus-mode-toggle-btn { position: fixed; top: 20px; right: 20px; z-index: 999; background: rgba(25, 20, 30, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); padding: 6px 14px; border-radius: 20px; color: #ffffff; font-size: 0.78rem; cursor: pointer; backdrop-filter: blur(10px); transition: all 0.2s; }
+.focus-mode-toggle-btn:hover { background: rgba(255, 255, 255, 0.12); border-color: rgba(255,255,255,0.2); }
+.dashboard-wrapper.focus-active .hide-in-focus { opacity: 0 !important; pointer-events: none !important; display: none !important; }
+.dashboard-wrapper.focus-active #goalsSec { display: none !important; }
+.dashboard-wrapper.focus-active .glass-card { width: 100vw; height: 100vh; max-width: 100vw; background: transparent; border: none; box-shadow: none; backdrop-filter: none; justify-content: center; }
+.dashboard-wrapper.focus-active .dashboard-screen { scroll-snap-align: none; }
+.dashboard-wrapper.focus-active { overflow: hidden; scroll-snap-type: none; }
 
-// --- TIMER MECHANICAL LIFECYCLE ENGINE ---
-function runTimerLoop() {
-    if (!isTimerRunning) return;
-    const now = performance.now(); msLeft -= (now - lastTimestamp); lastTimestamp = now;
-    if (msLeft <= 0) {
-        msLeft = 0; isTimerRunning = false; clearInterval(intervalId); intervalId = null;
-        document.getElementById('pauseBtn').textContent = "Start"; document.getElementById('pauseBtn').classList.remove('active');
-        triggerDefaultChimeAlarm();
-    }
-    renderTimerUi();
+/* --- UPGRADED AUDIO PILL WIDGET CONTROLS --- */
+.soundscape-control-row { display: flex; gap: 12px; justify-content: center; width: 100%; margin: 15px 0; }
+.soundscape-pill { 
+    background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06); 
+    border-radius: 50%; color: #8c8694; width: 54px; height: 54px; 
+    display: flex; align-items: center; justify-content: center; cursor: pointer; 
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); box-shadow: 0 4px 15px rgba(0,0,0,0.2); 
 }
-function renderTimerUi() {
-    const totalSecs = Math.ceil(msLeft / 1000);
-    document.getElementById('countdownDisplay').textContent = `${String(Math.floor(totalSecs / 60)).padStart(2, '0')}:${String(totalSecs % 60).padStart(2, '0')}`;
-    const fillNode = document.getElementById('liquidFill'); if (fillNode) { fillNode.style.top = `${(1 - (msLeft / totalMs)) * 100}%`; if (msLeft < 30000 && msLeft > 0) { fillNode.classList.add('timer-critical'); } else { fillNode.classList.remove('timer-critical'); } }
+.soundscape-pill:hover { background: rgba(255, 255, 255, 0.08); color: #ffffff; transform: scale(1.08); }
+.soundscape-pill.active { 
+    background: rgba(255, 255, 255, 0.12); border-color: var(--theme-secondary); 
+    color: var(--theme-secondary); box-shadow: 0 0 20px var(--theme-glow); transform: scale(1.05); 
 }
-function triggerDefaultChimeAlarm() {
-    try {
-        initAudioCtx(); const tonesList = [523.25, 659.25, 783.99];
-        tonesList.forEach((frequency) => {
-            const osc = audioCtx.createOscillator(), gainNode = audioCtx.createGain();
-            osc.type = 'sine'; osc.frequency.setValueAtTime(frequency, audioCtx.currentTime);
-            gainNode.gain.setValueAtTime(0.25, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.001, application.currentTime + 1.2);
-            osc.connect(gainNode); gainNode.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 1.2);
-        });
-        if (document.hidden && Notification.permission === "granted") new Notification("Timer Finished!");
-    } catch (e) {}
-}
-function toggleTimer() { if (isSettingUp) saveTimerSettings(); const btn = document.getElementById('pauseBtn'); if (isTimerRunning) { isTimerRunning = false; clearInterval(intervalId); btn.textContent = "Start"; btn.classList.remove('active'); } else { isTimerRunning = true; lastTimestamp = performance.now(); intervalId = setInterval(runTimerLoop, 50); btn.textContent = "Pause"; btn.classList.add('active'); } }
-function cancelTimer() { isTimerRunning = false; if (intervalId) clearInterval(intervalId); msLeft = totalMs; isSettingUp = false; document.getElementById('timerInputOverlay').classList.add('hidden'); document.getElementById('countdownDisplay').classList.remove('hidden'); document.getElementById('pauseBtn').textContent = "Start"; document.getElementById('pauseBtn').classList.remove('active'); renderTimerUi(); }
-function openTimerSettings() { if (isTimerRunning) return; isSettingUp = true; document.getElementById('countdownDisplay').classList.add('hidden'); document.getElementById('timerInputOverlay').classList.remove('hidden'); const totalSecs = totalMs / 1000; document.getElementById('inputMinutes').value = String(Math.floor(totalSecs / 60)).padStart(2, '0'); document.getElementById('inputSeconds').value = String(totalSecs % 60).padStart(2, '0'); }
-function saveTimerSettings() { totalMs = ((parseInt(document.getElementById('inputMinutes').value) || 0) * 60 + Math.min(59, parseInt(document.getElementById('inputSeconds').value) || 0)) * 1000; msLeft = totalMs; isSettingUp = false; document.getElementById('timerInputOverlay').classList.add('hidden'); document.getElementById('countdownDisplay').classList.remove('hidden'); renderTimerUi(); }
-function handleTimerInputKey(e) { if (e.key === 'Enter') saveTimerSettings(); }
-function loadTimerPreset(mins) { if (isTimerRunning) return; totalMs = mins * 60 * 1000; msLeft = totalMs; renderTimerUi(); }
+.soundscape-pill svg { width: 22px; height: 22px; transition: transform 0.3s ease; }
+.soundscape-pill.active svg { transform: scale(1.1); }
 
-// --- LIQUID TIMER COLOR CONFIGURATION & IOS SHORTCUT LINK ---
-function switchActiveThemeColor(color) {
-    currentSelectedLiquidTheme = color;
-    localStorage.setItem('db-liquid-theme', color);
-    document.body.classList.remove('liquid-orange', 'liquid-mint', 'liquid-cyan', 'liquid-magenta');
-    document.body.classList.add(`liquid-${color}`);
-    document.querySelectorAll('.theme-dot').forEach(dot => { dot.classList.toggle('active', dot.classList.contains(color)); });
-    const link = document.getElementById('apple-icon'); if (link) link.href = 'icon.png';
-}
+.micro-goals-checklist-panel { width: 100%; flex-grow: 1; display: flex; flex-direction: column; gap: 15px; justify-content: center; margin: 20px 0; }
+.checklist-input-row { display: flex; gap: 6px; background: rgba(255, 255, 255, 0.03); padding: 6px 10px; border-radius: 14px; border: 1px solid rgba(255, 255, 255, 0.06); }
+.checklist-input-row input { background: transparent; border: none; outline: none; color: white; font-size: 0.85rem; flex-grow: 1; font-family: inherit; }
+.checklist-input-row button { background: rgba(255, 255, 255, 0.06); border: none; border-radius: 10px; width: 26px; height: 26px; color: white; cursor: pointer; font-weight: bold; }
+.checklist-items-scroll { max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding-right: 4px; }
+.goal-item-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255,255,255,0.04); border-radius: 10px; font-size: 0.85rem; animation: slideIn 0.2s ease-out; }
+@keyframes slideIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+.goal-left-block { display: flex; align-items: center; gap: 10px; overflow: hidden; width: 85%; }
+.goal-left-block span { text-overflow: ellipsis; overflow: hidden; white-space: nowrap; color: #c5c2c7; }
+.goal-left-block input[type="checkbox"] { cursor: pointer; accent-color: var(--theme-primary); margin: 0; width: 15px; height: 14px; }
+.goal-left-block.complete span { text-decoration: line-through; color: #4e4955; }
+.goal-delete-btn { background: transparent; border: none; color: #4e4955; cursor: pointer; font-size: 0.8rem; }
+.goal-delete-btn:hover { color: #ff453a; }
 
-// --- BOOTSTRAP OPERATIONAL PIPES ---
-function scrollToSection(id) { const el = document.getElementById(id); if (el) el.scrollIntoView({ behavior: 'smooth' }); }
-if (window.Notification && Notification.permission === "default") Notification.requestPermission();
+.timer-visual-container { position: relative; width: 230px; height: 230px; display: flex; align-items: center; justify-content: center; }
+.liquid-container-ring { position: absolute; width: 100%; height: 100%; border-radius: 50%; border: 3px solid #1c1522; overflow: hidden; background: #07030a; }
+.liquid-wave-element { position: absolute; width: 200%; height: 200%; background: linear-gradient(180deg, var(--theme-secondary) 0%, var(--theme-primary) 100%); left: -50%; border-radius: 42%; animation: spinWave 12s linear infinite; transition: top 0.1s linear, background 0.4s ease; top: 0%; box-shadow: 0 0 20px var(--theme-glow); }
+.liquid-wave-element.timer-critical { background: linear-gradient(180deg, #ff453a 0%, #ff2d55 100%) !important; animation: spinWave 6s linear infinite, criticalPulse 0.4s ease-in-out infinite alternate !important; box-shadow: 0 0 25px rgba(255, 69, 58, 0.5) !important; }
+@keyframes spinWave { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes criticalPulse { from { filter: brightness(1); } to { filter: brightness(1.2); } }
+.timer-text-overlay { font-size: 3.6rem; font-weight: 300; position: relative; z-index: 5; cursor: pointer; font-variant-numeric: tabular-nums; }
+.timer-input-overlay { position: relative; z-index: 10; display: flex; gap: 4px; justify-content: center; align-items: center; }
+.timer-input-overlay input { width: 60px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; color: white; font-size: 2.5rem; text-align: center; outline: none; }
+.timer-input-overlay span { font-size: 2.2rem; color: var(--theme-primary); }
+.btn-text-small { background: var(--theme-primary); border: none; color: #050206; padding: 4px 16px; border-radius: 14px; font-weight: bold; cursor: pointer; font-size: 0.8rem; }
+.scroll-prompt { font-size: 0.72rem; letter-spacing: 1px; color: #4e4955; position: absolute; bottom: 15px; cursor: pointer; text-align: center; }
+.scroll-prompt .arrow { margin-top: 2px; }
 
-// Boot application layout engines
-updateClockMechanics();
-switchActiveThemeColor(currentSelectedLiquidTheme);
-switchAmbientMotionStyle(activeAmbientMotionStyle);
-syncClockFaceDisplay();
-renderMicroGoalsChecklist();
-renderTimerUi();
+.timer-controls { display: flex; gap: 80px; width: 100%; justify-content: center; margin-top: 5px; }
+.control-btn { width: 64px; height: 64px; border-radius: 50%; border: none; background-color: #17131d; color: white; cursor: pointer; font-size: 0.82rem; transition: background 0.2s; }
+.control-btn:hover { background-color: #231d2c; }
+.btn-pause { color: var(--theme-secondary); } .btn-pause.active { background-color: var(--theme-primary); color: white; }
+
+.timer-presets-row { display: flex; gap: 8px; justify-content: center; width: 100%; }
+.preset-pill { background: rgba(25,20,30,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 4px 12px; border-radius: 12px; color: #8c8694; font-size: 0.75rem; cursor: pointer; font-family: inherit; }
+.preset-pill:hover { color: white; border-color: rgba(255,255,255,0.15); }
+
+.color-customizer-tray { display: flex; gap: 12px; justify-content: center; width: 100%; }
+.theme-dot { width: 11px; height: 11px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: transform 0.2s; }
+.theme-dot:hover { transform: scale(1.2); }
+.theme-dot.active { border-color: white; transform: scale(1.1); }
+.theme-dot.orange { background: #ff6f00; }
+.theme-dot.mint { background: #107c41; }
+.theme-dot.cyan { background: #0078d4; }
+.theme-dot.magenta { background: #b4009e; }
