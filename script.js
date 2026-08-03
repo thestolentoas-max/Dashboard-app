@@ -31,14 +31,14 @@ function toggleAmbientSound(type, vol) {
         }
         const gain = audioCtx.createGain(); gain.gain.setValueAtTime(vol, audioCtx.currentTime); gain.connect(audioCtx.destination);
         let src = makeWhiteNoiseSource(); const filter = audioCtx.createBiquadFilter();
-        
+
         if (type === 'rain') { filter.type = 'lowpass'; filter.frequency.setValueAtTime(450, audioCtx.currentTime); }
         else if (type === 'fire') { filter.type = 'bandpass'; filter.frequency.setValueAtTime(1000, audioCtx.currentTime); filter.Q.setValueAtTime(2.5, audioCtx.currentTime); }
         else { filter.type = 'lowpass'; filter.frequency.setValueAtTime(1200, audioCtx.currentTime); }
-        
+
         src.connect(filter); filter.connect(gain); src.start();
         ambientNodes[type] = { src: src, gain: gain }; document.getElementById(`sound-${type}`).classList.add('active');
-    } catch(e){}
+    } catch (e) { }
 }
 
 // --- DYNAMIC BACKGROUND CONTROL LOGIC MATRICES ---
@@ -46,7 +46,7 @@ function updateColorTemperatureTheme() {
     const hr = new Date().getHours();
     let computedTheme = "noon";
     let greetingText = "Good morning";
-    
+
     if (hr >= 5 && hr < 12) {
         computedTheme = "morning"; greetingText = "Good morning";
     } else if (hr >= 12 && hr < 17) {
@@ -56,10 +56,10 @@ function updateColorTemperatureTheme() {
     } else {
         computedTheme = "midnight"; greetingText = "Good night";
     }
-    
+
     document.body.classList.remove('time-morning', 'time-noon', 'time-evening', 'time-midnight');
     document.body.classList.add(`time-${computedTheme}`);
-    
+
     const displayHeader = document.getElementById('greetingDisplay');
     if (displayHeader && !displayHeader.classList.contains('hidden')) {
         displayHeader.textContent = `${greetingText}, ${userName}!`;
@@ -69,10 +69,10 @@ function updateColorTemperatureTheme() {
 function switchAmbientMotionStyle(styleMode) {
     activeAmbientMotionStyle = styleMode;
     localStorage.setItem('db-ambient-motion', styleMode);
-    
+
     document.body.classList.remove('fx-float', 'fx-orbit', 'fx-breath');
     document.body.classList.add(`fx-${styleMode}`);
-    
+
     document.querySelectorAll('.style-select-btn').forEach(btn => {
         btn.classList.toggle('active', btn.id === `fx-${styleMode}`);
     });
@@ -81,18 +81,18 @@ function switchAmbientMotionStyle(styleMode) {
 // --- CLOCK CONTROLLER METRICS ---
 function updateClockMechanics() {
     const now = new Date(), hr = now.getHours(), min = now.getMinutes(), sec = now.getSeconds();
-    
+
     const timeMainEl = document.getElementById('timeMain');
     if (timeMainEl) {
         timeMainEl.textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
         document.getElementById('timeAmpm').textContent = hr >= 12 ? 'PM' : 'AM';
         document.getElementById('dateSub').textContent = now.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase();
-        
+
         document.getElementById('analogHour').style.transform = `translateX(-50%) rotate(${(hr * 30) + (min * 0.5)}deg)`;
         document.getElementById('analogMin').style.transform = `translateX(-50%) rotate(${(min * 6)}deg)`;
         document.getElementById('analogSec').style.transform = `translateX(-50%) rotate(${(sec * 6)}deg)`;
     }
-    
+
     if (hr !== lastRecordedHour || sec === 0) {
         lastRecordedHour = hr;
         updateColorTemperatureTheme();
@@ -162,7 +162,7 @@ function triggerDefaultChimeAlarm() {
             osc.connect(gainNode); gainNode.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 1.2);
         });
         if (document.hidden && Notification.permission === "granted") new Notification("Timer Finished!");
-    } catch (e) {}
+    } catch (e) { }
 }
 // Configuration controls layer
 function toggleTimer() { if (isSettingUp) saveTimerSettings(); const btn = document.getElementById('pauseBtn'); if (isTimerRunning) { isTimerRunning = false; clearInterval(intervalId); btn.textContent = "Start"; btn.classList.remove('active'); } else { isTimerRunning = true; lastTimestamp = performance.now(); intervalId = setInterval(runTimerLoop, 50); btn.textContent = "Pause"; btn.classList.add('active'); } }
@@ -180,7 +180,7 @@ function switchActiveThemeColor(color) {
     document.body.classList.remove('liquid-orange', 'liquid-mint', 'liquid-cyan', 'liquid-magenta');
     document.body.classList.add(`liquid-${color}`);
     document.querySelectorAll('.theme-dot').forEach(dot => { dot.classList.toggle('active', dot.classList.contains(color)); });
-    
+
     // LINKED TARGET ENGINE: Sets your new circular image as the main apple app icon resource pointer
     const link = document.getElementById('apple-icon');
     if (link) link.href = 'icon.png';
