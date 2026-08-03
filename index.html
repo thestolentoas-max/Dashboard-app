@@ -1,202 +1,131 @@
-// --- STATE & PERSISTENT STORAGE MEMORY ---
-let userName = localStorage.getItem('db-name') || "Alex";
-let isAnalogClockMode = localStorage.getItem('db-clock-mode') === "analog";
-let activeAmbientMotionStyle = localStorage.getItem('db-ambient-motion') || "float";
-let currentSelectedLiquidTheme = localStorage.getItem('db-liquid-theme') || "orange";
-let myMicroGoalsList = JSON.parse(localStorage.getItem('db-micro-goals')) || [];
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-let totalMs = 300000, msLeft = 300000, isTimerRunning = false, isSettingUp = false;
-let intervalId = null, lastTimestamp = 0;
-let lastRecordedHour = -1;
+    <!-- MOBILE WEB APP ARCHITECTURE LINK CONFIGURATIONS -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-// --- WEB AUDIO CONTROLLERS ---
-let audioCtx = null, ambientNodes = {};
-function initAudioCtx() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+    <!-- FIXED NATIVE VECTOR APPS ICON ENGINE (Bypasses the missing image file) -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%27http://w3.org viewBox=%270 0 512 512%27><rect width=%27512%27 height=%27512%27 rx=%27120%27 fill=%27%23050206%27/><circle cx=%27256%27 cy=%27256%27 r=%27140%27 fill=%27none%27 stroke=%27%23ff6f00%27 stroke-width=%2712%27 filter=%27drop-shadow(0 0 15px rgba(255,111,0,0.6))%27/><path d=%27M190 256c30-40 80-40 110 0s80 40 110 0%27 stroke=%27%23ffb300%27 stroke-width=%278%27 fill=%27none%27 stroke-linecap=%27round%27/></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%27http://w3.org viewBox=%270 0 512 512%27><rect width=%27512%27 height=%27512%27 rx=%27120%27 fill=%27%23050206%27/><circle cx=%27256%27 cy=%27256%27 r=%27140%27 fill=%27none%27 stroke=%27%23ff6f00%27 stroke-width=%2712%27 filter=%27drop-shadow(0 0 15px rgba(255,111,0,0.6))%27/><path d=%27M190 256c30-40 80-40 110 0s80 40 110 0%27 stroke=%27%23ffb300%27 stroke-width=%278%27 fill=%27none%27 stroke-linecap=%27round%27/></svg>">
 
-function makeWhiteNoiseSource() {
-    initAudioCtx();
-    const size = audioCtx.sampleRate * 2, buffer = audioCtx.createBuffer(1, size, audioCtx.sampleRate), data = buffer.getChannelData(0);
-    for (let i = 0; i < size; i++) { data[i] = Math.random() * 2 - 1; }
-    const node = audioCtx.createBufferSource(); node.buffer = buffer; node.loop = true;
-    return node;
-}
+    <title>Liquid Dark Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
 
-function toggleAmbientSound(type, vol) {
-    try {
-        initAudioCtx();
-        if (ambientNodes[type]) {
-            ambientNodes[type].src.stop(); ambientNodes[type].gain.disconnect();
-            delete ambientNodes[type]; document.getElementById(`sound-${type}`).classList.remove('active');
-            return;
-        }
-        const gain = audioCtx.createGain(); gain.gain.setValueAtTime(vol, audioCtx.currentTime); gain.connect(audioCtx.destination);
-        let src = makeWhiteNoiseSource(); const filter = audioCtx.createBiquadFilter();
+    <!-- TIME AND STYLE CONTROLLED GRADIENT BACKGROUND SPOTLIGHTS -->
+    <div class="spotlight-aura spotlight-one" id="spot1"></div>
+    <div class="spotlight-aura spotlight-two" id="spot2"></div>
 
-        if (type === 'rain') { filter.type = 'lowpass'; filter.frequency.setValueAtTime(450, audioCtx.currentTime); }
-        else if (type === 'fire') { filter.type = 'bandpass'; filter.frequency.setValueAtTime(1000, audioCtx.currentTime); filter.Q.setValueAtTime(2.5, audioCtx.currentTime); }
-        else { filter.type = 'lowpass'; filter.frequency.setValueAtTime(1200, audioCtx.currentTime); }
+    <button class="focus-mode-toggle-btn" onclick="toggleFocusMode()" title="Toggle Focus Mode">👁️ Focus Mode</button>
 
-        src.connect(filter); filter.connect(gain); src.start();
-        ambientNodes[type] = { src: src, gain: gain }; document.getElementById(`sound-${type}`).classList.add('active');
-    } catch (e) { }
-}
+    <div class="dashboard-wrapper">
 
-// --- DYNAMIC BACKGROUND CONTROL LOGIC MATRICES ---
-function updateColorTemperatureTheme() {
-    const hr = new Date().getHours();
-    let computedTheme = "noon";
-    let greetingText = "Good morning";
+        <!-- SCREEN 1: CLOCK VIEW & IMMERSIVE AUDIO CONTROLS -->
+        <section class="dashboard-screen" id="clockSec">
+            <div class="glass-card element-reveal">
+                <div class="greeting-container hide-in-focus">
+                    <h2 class="greeting-text" id="greetingDisplay" onclick="editName()">Good evening, Alex!</h2>
+                    <div class="name-editor hidden" id="nameEditor">
+                        <input type="text" id="nameInput" maxlength="20" class="name-input" onkeydown="handleNameInputKey(event)">
+                        <button class="btn-text" onclick="saveName()">Done</button>
+                    </div>
+                    <p class="greeting-subtext" id="greetingSubtext">Time to crush your goals today.</p>
+                </div>
 
-    if (hr >= 5 && hr < 12) {
-        computedTheme = "morning"; greetingText = "Good morning";
-    } else if (hr >= 12 && hr < 17) {
-        computedTheme = "noon"; greetingText = "Good afternoon";
-    } else if (hr >= 17 && hr < 21) {
-        computedTheme = "evening"; greetingText = "Good evening";
-    } else {
-        computedTheme = "midnight"; greetingText = "Good night";
-    }
+                <div class="clock-display" onclick="toggleClockStyleMode()" title="Click to change clock face style">
+                    <div id="digitalClockView">
+                        <div class="time-main" id="timeMain">00:00:00</div>
+                        <div class="time-ampm" id="timeAmpm">AM</div>
+                    </div>
+                    <div id="analogClockView" class="hidden">
+                        <div class="analog-face">
+                            <div class="analog-hand hour" id="analogHour"></div>
+                            <div class="analog-hand minute" id="analogMin"></div>
+                            <div class="analog-hand second" id="analogSec"></div>
+                            <div class="analog-center-pin"></div>
+                        </div>
+                    </div>
+                    <div class="date-sub" id="dateSub">LOADING DATE...</div>
+                </div>
 
-    document.body.classList.remove('time-morning', 'time-noon', 'time-evening', 'time-midnight');
-    document.body.classList.add(`time-${computedTheme}`);
+                <div class="soundscape-control-row hide-in-focus">
+                    <button class="soundscape-pill" id="sound-rain" onclick="toggleAmbientSound('rain', 0.12)" title="Heavy Rain Shower">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v2M4.22 4.22l1.42 1.42M1 12h2M21 12h2M18.36 5.64l1.42-1.42M20 17.5c0 1.93-1.57 3.5-3.5 3.5h-9A4.5 4.5 0 0 1 3 16.5c0-2.2 1.63-4.03 3.75-4.43A6.002 6.002 0 0 1 18 11c0 .24-.01.48-.04.71A4.49 4.49 0 0 1 20 15.5v2z" /></svg>
+                    </button>
+                    <button class="soundscape-pill" id="sound-fire" onclick="toggleAmbientSound('fire', 0.16)" title="Crackling Campfire">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v2M4.22 4.22l1.42 1.42M1 12h2M21 12h2M18.36 5.64l1.42-1.42M5 17h14M7 21h10" /></svg>
+                    </button>
+                    <button class="soundscape-pill" id="sound-white" onclick="toggleAmbientSound('white', 0.06)" title="Deep Static Noise">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v2M4.22 4.22l1.42 1.42M1 12h2M21 12h2M18.36 5.64l1.42-1.42M3 16h18M3 20h18" /></svg>
+                    </button>
+                </div>
 
-    const displayHeader = document.getElementById('greetingDisplay');
-    if (displayHeader && !displayHeader.classList.contains('hidden')) {
-        displayHeader.textContent = `${greetingText}, ${userName}!`;
-    }
-}
+                <div class="scroll-prompt hide-in-focus" onclick="scrollToSection('goalsSec')">SCROLL FOR MICRO GOALS<div class="arrow">↓</div></div>
+            </div>
+        </section>
 
-function switchAmbientMotionStyle(styleMode) {
-    activeAmbientMotionStyle = styleMode;
-    localStorage.setItem('db-ambient-motion', styleMode);
+        <!-- SCREEN 2: STANDALONE DAILY MICRO GOALS MANAGER -->
+        <section class="dashboard-screen" id="goalsSec">
+            <div class="glass-card element-reveal">
+                <div class="card-header-block">
+                    <h4 class="card-header-text">DAILY MICRO GOALS</h4>
+                    <p class="card-header-sub">Keep your focus bite-sized and clear.</p>
+                </div>
+                <div class="micro-goals-checklist-panel">
+                    <div class="checklist-input-row">
+                        <input type="text" id="goalTextInput" placeholder="Add a daily micro-goal..." onkeydown="handleGoalInputKey(event)">
+                        <button onclick="addMicroGoalItem()">+</button>
+                    </div>
+                    <div class="checklist-items-scroll" id="checklistItemsContainer"></div>
+                </div>
+                <div class="scroll-prompt" onclick="scrollToSection('timerSec')">SCROLL FOR TIMER<div class="arrow">↓</div></div>
+            </div>
+        </section>
 
-    document.body.classList.remove('fx-float', 'fx-orbit', 'fx-breath');
-    document.body.classList.add(`fx-${styleMode}`);
+        <!-- SCREEN 3: COUNTDOWN TIMER CARD -->
+        <section id="timerSec" class="dashboard-screen">
+            <div class="glass-card element-reveal">
+                <div class="timer-main-box">
+                    <div class="timer-visual-container">
+                        <div class="liquid-container-ring"><div class="liquid-wave-element" id="liquidFill"></div></div>
+                        <div class="timer-text-overlay" id="countdownDisplay" onclick="openTimerSettings()">05:00</div>
+                    </div>
+                    <div class="timer-input-overlay hidden" id="timerInputOverlay">
+                        <input type="text" id="inputMinutes" maxlength="2" value="05" oninput="this.value = this.value.replace(/[^0-9]/g, '')" onkeydown="handleTimerInputKey(event)">
+                        <span>:</span>
+                        <input type="text" id="inputSeconds" maxlength="2" value="00" oninput="this.value = this.value.replace(/[^0-9]/g, '')" onkeydown="handleTimerInputKey(event)">
+                        <button class="btn-text-small" onclick="saveTimerSettings()">Set Time</button>
+                    </div>
+                </div>
+                <div class="timer-presets-row hide-in-focus">
+                    <button class="preset-pill" onclick="loadTimerPreset(25)">⏱️ 25m</button>
+                    <button class="preset-pill" onclick="loadTimerPreset(15)">⏱️ 15m</button>
+                    <button class="preset-pill" onclick="loadTimerPreset(5)">⏱️ 5m</button>
+                </div>
 
-    document.querySelectorAll('.style-select-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.id === `fx-${styleMode}`);
-    });
-}
+                <!-- COHESIVE LIQUID CUSTOMIZER SYSTEM THEME PICKER TRAY -->
+                <div class="color-customizer-tray hide-in-focus">
+                    <span class="theme-dot orange active" onclick="switchActiveThemeColor('orange')" title="Amber Orange"></span>
+                    <span class="theme-dot mint" onclick="switchActiveThemeColor('mint')" title="Neon Mint"></span>
+                    <span class="theme-dot cyan" onclick="switchActiveThemeColor('cyan')" title="Icy Cyan"></span>
+                    <span class="theme-dot magenta" onclick="switchActiveThemeColor('magenta')" title="Cyber Magenta"></span>
+                </div>
 
-// --- CLOCK CONTROLLER METRICS ---
-function updateClockMechanics() {
-    const now = new Date(), hr = now.getHours(), min = now.getMinutes(), sec = now.getSeconds();
+                <div class="timer-controls">
+                    <button class="control-btn" onclick="cancelTimer()">Cancel</button>
+                    <button class="control-btn btn-pause" id="pauseBtn" onclick="toggleTimer()">Start</button>
+                </div>
+            </div>
+        </section>
 
-    const timeMainEl = document.getElementById('timeMain');
-    if (timeMainEl) {
-        timeMainEl.textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-        document.getElementById('timeAmpm').textContent = hr >= 12 ? 'PM' : 'AM';
-        document.getElementById('dateSub').textContent = now.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase();
+    </div>
 
-        document.getElementById('analogHour').style.transform = `translateX(-50%) rotate(${(hr * 30) + (min * 0.5)}deg)`;
-        document.getElementById('analogMin').style.transform = `translateX(-50%) rotate(${(min * 6)}deg)`;
-        document.getElementById('analogSec').style.transform = `translateX(-50%) rotate(${(sec * 6)}deg)`;
-    }
-
-    if (hr !== lastRecordedHour || sec === 0) {
-        lastRecordedHour = hr;
-        updateColorTemperatureTheme();
-    }
-}
-setInterval(updateClockMechanics, 1000);
-
-function toggleClockStyleMode() {
-    isAnalogClockMode = !isAnalogClockMode;
-    localStorage.setItem('db-clock-mode', isAnalogClockMode ? "analog" : "digital");
-    syncClockFaceDisplay();
-}
-function syncClockFaceDisplay() {
-    document.getElementById('digitalClockView').classList.toggle('hidden', isAnalogClockMode);
-    document.getElementById('analogClockView').classList.toggle('hidden', !isAnalogClockMode);
-}
-function editName() { document.getElementById('greetingDisplay').classList.add('hidden'); document.getElementById('nameEditor').classList.remove('hidden'); const inputNode = document.getElementById('nameInput'); inputNode.value = userName; inputNode.focus(); }
-function saveName() { const val = document.getElementById('nameInput').value.trim(); if (val) { userName = val; localStorage.setItem('db-name', val); } document.getElementById('nameEditor').classList.add('hidden'); document.getElementById('greetingDisplay').classList.remove('hidden'); updateClockMechanics(); }
-function handleNameInputKey(e) { if (e.key === 'Enter') saveName(); }
-function toggleFocusMode() { const w = document.querySelector('.dashboard-wrapper'); w.classList.toggle('focus-active'); const isF = w.classList.contains('focus-active'); document.querySelector('.focus-mode-toggle-btn').textContent = isF ? "👁️ Exit Focus" : "👁️ Focus Mode"; }
-// --- MICRO GOALS CHECKLIST PANEL LOGIC ---
-function renderMicroGoalsChecklist() {
-    const container = document.getElementById('checklistItemsContainer'); if (!container) return;
-    container.innerHTML = "";
-    myMicroGoalsList.forEach((goal, index) => {
-        const row = document.createElement('div'); row.className = "goal-item-row";
-        const leftBlock = document.createElement('div'); leftBlock.className = `goal-left-block ${goal.complete ? 'complete' : ''}`;
-        const checkbox = document.createElement('input'); checkbox.type = "checkbox"; checkbox.checked = goal.complete; checkbox.onclick = () => toggleGoalItemStatus(index);
-        const textSpan = document.createElement('span'); textSpan.textContent = goal.text;
-        leftBlock.appendChild(checkbox); leftBlock.appendChild(textSpan);
-        const delBtn = document.createElement('button'); delBtn.className = "goal-delete-btn"; delBtn.textContent = "🗑️"; delBtn.onclick = () => removeMicroGoalItem(index);
-        row.appendChild(leftBlock); row.appendChild(delBtn); container.appendChild(row);
-    });
-}
-function addMicroGoalItem() {
-    const node = document.getElementById('goalTextInput'), val = node.value.trim(); if (!val) return;
-    myMicroGoalsList.push({ text: val, complete: false }); localStorage.setItem('db-micro-goals', JSON.stringify(myMicroGoalsList));
-    node.value = ""; renderMicroGoalsChecklist();
-}
-function handleGoalInputKey(e) { if (e.key === 'Enter') addMicroGoalItem(); }
-function toggleGoalItemStatus(index) { myMicroGoalsList[index].complete = !myMicroGoalsList[index].complete; localStorage.setItem('db-micro-goals', JSON.stringify(myMicroGoalsList)); renderMicroGoalsChecklist(); }
-function removeMicroGoalItem(index) { myMicroGoalsList.splice(index, 1); localStorage.setItem('db-micro-goals', JSON.stringify(myMicroGoalsList)); renderMicroGoalsChecklist(); }
-
-// --- TIMER MECHANICAL LIFECYCLE ENGINE ---
-function runTimerLoop() {
-    if (!isTimerRunning) return;
-    const now = performance.now(); msLeft -= (now - lastTimestamp); lastTimestamp = now;
-    if (msLeft <= 0) {
-        msLeft = 0; isTimerRunning = false; clearInterval(intervalId); intervalId = null;
-        document.getElementById('pauseBtn').textContent = "Start"; document.getElementById('pauseBtn').classList.remove('active');
-        triggerDefaultChimeAlarm();
-    }
-    renderTimerUi();
-}
-function renderTimerUi() {
-    const totalSecs = Math.ceil(msLeft / 1000);
-    document.getElementById('countdownDisplay').textContent = `${String(Math.floor(totalSecs / 60)).padStart(2, '0')}:${String(totalSecs % 60).padStart(2, '0')}`;
-    const fillNode = document.getElementById('liquidFill'); if (fillNode) { fillNode.style.top = `${(1 - (msLeft / totalMs)) * 100}%`; if (msLeft < 30000 && msLeft > 0) { fillNode.classList.add('timer-critical'); } else { fillNode.classList.remove('timer-critical'); } }
-}
-function triggerDefaultChimeAlarm() {
-    try {
-        initAudioCtx(); const tonesList = [523.25, 659.25, 783.99];
-        tonesList.forEach((frequency) => {
-            const osc = audioCtx.createOscillator(), gainNode = audioCtx.createGain();
-            osc.type = 'sine'; osc.frequency.setValueAtTime(frequency, audioCtx.currentTime);
-            gainNode.gain.setValueAtTime(0.25, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.2);
-            osc.connect(gainNode); gainNode.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 1.2);
-        });
-        if (document.hidden && Notification.permission === "granted") new Notification("Timer Finished!");
-    } catch (e) { }
-}
-// Configuration controls layer
-function toggleTimer() { if (isSettingUp) saveTimerSettings(); const btn = document.getElementById('pauseBtn'); if (isTimerRunning) { isTimerRunning = false; clearInterval(intervalId); btn.textContent = "Start"; btn.classList.remove('active'); } else { isTimerRunning = true; lastTimestamp = performance.now(); intervalId = setInterval(runTimerLoop, 50); btn.textContent = "Pause"; btn.classList.add('active'); } }
-function cancelTimer() { isTimerRunning = false; if (intervalId) clearInterval(intervalId); msLeft = totalMs; isSettingUp = false; document.getElementById('timerInputOverlay').classList.add('hidden'); document.getElementById('countdownDisplay').classList.remove('hidden'); document.getElementById('pauseBtn').textContent = "Start"; document.getElementById('pauseBtn').classList.remove('active'); renderTimerUi(); }
-// Setup configurations update nodes
-function openTimerSettings() { if (isTimerRunning) return; isSettingUp = true; document.getElementById('countdownDisplay').classList.add('hidden'); document.getElementById('timerInputOverlay').classList.remove('hidden'); const totalSecs = totalMs / 1000; document.getElementById('inputMinutes').value = String(Math.floor(totalSecs / 60)).padStart(2, '0'); document.getElementById('inputSeconds').value = String(totalSecs % 60).padStart(2, '0'); }
-function saveTimerSettings() { totalMs = ((parseInt(document.getElementById('inputMinutes').value) || 0) * 60 + Math.min(59, parseInt(document.getElementById('inputSeconds').value) || 0)) * 1000; msLeft = totalMs; isSettingUp = false; document.getElementById('timerInputOverlay').classList.add('hidden'); document.getElementById('countdownDisplay').classList.remove('hidden'); renderTimerUi(); }
-function handleTimerInputKey(e) { if (e.key === 'Enter') saveTimerSettings(); }
-function loadTimerPreset(mins) { if (isTimerRunning) return; totalMs = mins * 60 * 1000; msLeft = totalMs; renderTimerUi(); }
-
-// --- LIQUID TIMER COLOR CONFIGURATION ---
-function switchActiveThemeColor(color) {
-    currentSelectedLiquidTheme = color;
-    localStorage.setItem('db-liquid-theme', color);
-    document.body.classList.remove('liquid-orange', 'liquid-mint', 'liquid-cyan', 'liquid-magenta');
-    document.body.classList.add(`liquid-${color}`);
-    document.querySelectorAll('.theme-dot').forEach(dot => { dot.classList.toggle('active', dot.classList.contains(color)); });
-
-    // LINKED TARGET ENGINE: Sets your new circular image as the main apple app icon resource pointer
-    const link = document.getElementById('apple-icon');
-    if (link) link.href = 'icon.png';
-}
-
-// --- SYSTEM WORKSPACE OBSERVERS INITIALIZATION ---
-const observer = new IntersectionObserver((entries) => { entries.forEach(e => e.target.classList.toggle('visible', e.isIntersecting)); }, { threshold: 0.15 });
-function scrollToSection(id) { const el = document.getElementById(id); if (el) el.scrollIntoView({ behavior: 'smooth' }); }
-document.querySelectorAll('.element-reveal').forEach(el => observer.observe(el));
-
-if (window.Notification && Notification.permission === "default") Notification.requestPermission();
-
-// Boot application layout engines
-updateClockMechanics();
-switchActiveThemeColor(currentSelectedLiquidTheme);
-switchAmbientMotionStyle(activeAmbientMotionStyle);
-syncClockFaceDisplay();
-renderMicroGoalsChecklist();
-renderTimerUi();
+    <script src="script.js"></script>
+</body>
+</html>
